@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DollarSign, Clock, PlusCircle, Zap } from 'lucide-react'
+import { loadStripe } from '@stripe/stripe-js';
 
 // Placeholder for Slider component
 interface SliderProps {
@@ -51,8 +52,28 @@ export default function CMRSlider() {
   }
 
   const handleGetStarted = async () => {
-    // TODO: Implement Stripe checkout
-    console.log('Redirecting to Stripe checkout...')
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product,
+          minutes,
+          totalCost: calculateTotalCost(minutes),
+        }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
+      
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId });
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+    }
   }
 
   return (
